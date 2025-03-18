@@ -38,19 +38,21 @@ void displayProcesses(proc *process_array, int n)
         printf("--------------------------\n");
     }
 }
-void searchProcessById(proc *process_array, int n, int search_pid)
+void searchProcessById(proc *p, int n, int search_pid)
 {
     int found = 0;
     for (int i = 0; i < n; i++)
     {
-        if (process_array[i].pid == search_pid)
+        if (p[i].pid == search_pid)
         {
+
+            
             printf("\nProcess Found:\n");
-            printf("Process id: %d\n", process_array[i].pid);
-            printf("Process name: %s\n", process_array[i].p_name);
-            printf("Process arrival time: %s\n", process_array[i].process_arrival_time);
-            printf("Process completion time: %s\n", process_array[i].process_completion_time);
-            printf("Process execution time: %d ms\n", process_array[i].executiontime);
+            printf("Process id: %d\n", p[i].pid);
+            printf("Process name: %s\n", p[i].p_name);
+            printf("Process arrival time: %s\n", p[i].process_arrival_time);
+            printf("Process completion time: %s\n", p[i].process_completion_time);
+            printf("Process execution time: %d ms\n", p[i].executiontime);
             found = 1;
             break;
         }

@@ -1,113 +1,111 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct fcfs {
-    int pid;
-    int arrivaltime;
-    int bursttime;
-    int completiontime;
-    int turnaroundtime;
-    int waitingtime;
-    int responsetime;
-} fcfs;
-
-void input_process_details(struct fcfs *f) {
+struct process_fcfs
+{
+    char process_id[5];
+    int arrival_time;
+    int burst_time;
+    int completion_time;
+    int turn_around_time;
+    int waiting_time;
+    int response_time;
+};
+void input_process_details(struct process_fcfs *p)
+{
     printf("Enter Process ID: ");
-    scanf("%d", &f->pid);
+    scanf("%s", &p->process_id);
 
     printf("Enter Arrival Time: ");
-    scanf("%d", &f->arrivaltime);
+    scanf("%d", &p->arrival_time);
 
     printf("Enter Burst Time: ");
-    scanf("%d", &f->bursttime);
+    scanf("%d", &p->burst_time);
 }
-
-int compare_arrival_time(const void *a, const void *b) {
-    return ((fcfs*)a)->arrivaltime - ((fcfs*)b)->arrivaltime;
-}
-
-void calculate_time(fcfs *processes, int n) {
+void calculate_times(struct process_fcfs *p, int n)
+{
     int current_time = 0;
-
-    qsort(processes, n, sizeof(fcfs), compare_arrival_time);
-
-    for (int i = 0; i < n; i++) {
-        if (current_time < processes[i].arrivaltime) {                                                                                                                                             
-            current_time = processes[i].arrivaltime;
+    for (int i = 0; i < n; i++)
+    {
+        if (current_time < p[i].arrival_time)
+        {
+            current_time = p[i].arrival_time;
         }
-
-        processes[i].completiontime = current_time + processes[i].bursttime;
-        processes[i].turnaroundtime = processes[i].completiontime - processes[i].arrivaltime;
-        processes[i].waitingtime = processes[i].turnaroundtime - processes[i].bursttime;
-        processes[i].responsetime = processes[i].waitingtime;
-
-        current_time = processes[i].completiontime;
+        p[i].completion_time = current_time + p[i].burst_time;
+        p[i].turn_around_time = p[i].completion_time - p[i].arrival_time;
+        p[i].waiting_time = p[i].turn_around_time - p[i].burst_time;
+        p[i].response_time = p[i].waiting_time;
+        current_time = p[i].completion_time;
     }
 }
 
-float calculate_avg_turnaround_time(fcfs *processes, int n) {
+void calculate_averages(struct process_fcfs p[], int n)
+{
     int total_turnaround_time = 0;
-    for (int i = 0; i < n; i++) {
-        total_turnaround_time += processes[i].turnaroundtime;
-    }
-    return (float)total_turnaround_time / n;
-}
-
-float calculate_avg_waiting_time(fcfs *processes, int n) {
     int total_waiting_time = 0;
-    for (int i = 0; i < n; i++) {
-        total_waiting_time += processes[i].waitingtime;
-    }
-    return (float)total_waiting_time / n;
-}
+    int total_response_time = 0;
 
-void display_process_details(fcfs *processes, int n) {
-    printf("\nProcess ID\tArrival Time\tBurst Time\tCompletion Time\tTurnaround Time\tWaiting Time\tResponse Time\n");
-    for (int i = 0; i < n; i++) {
-        printf("%d\t\t%d\t\t%d\t\t%d\t\t%d\t\t%d\t\t%d\n", 
-                processes[i].pid, processes[i].arrivaltime, processes[i].bursttime, 
-                processes[i].completiontime, processes[i].turnaroundtime, 
-                processes[i].waitingtime, processes[i].responsetime);
+    for (int i = 0; i < n; i++)
+    {
+        total_turnaround_time += p[i].turn_around_time;
+        total_waiting_time += p[i].waiting_time;
+        total_response_time += p[i].response_time;
     }
 
-    float avg_turnaround_time = calculate_avg_turnaround_time(processes, n);
-    float avg_waiting_time = calculate_avg_waiting_time(processes, n);
-
-    printf("\nAverage Turnaround Time: %.2f", avg_turnaround_time);
-    printf("\nAverage Waiting Time: %.2f\n", avg_waiting_time);
+    printf("\nAverages:\n");
+    printf("Average Turnaround Time: %.2f\n", (float)total_turnaround_time / n);
+    printf("Average Waiting Time: %.2f\n", (float)total_waiting_time / n);
+    printf("Average Response Time: %.2f\n", (float)total_response_time / n);
 }
 
-int main() {
+void display_process_details(struct process_fcfs p[], int n)
+{
+    printf("\n%-15s%-15s%-15s%-15s%-15s%-15s%-15s\n", "Process ID", "Arrival Time", "Burst Time", "Completion Time", "Turn Around Time", "Waiting Time", "Response Time");
+    for (int i = 0; i < n; i++)
+    {
+        printf("%-15s%-15d%-15d%-15d%-15d%-15d%-15d\n", p[i].process_id, p[i].arrival_time, p[i].burst_time, p[i].completion_time, p[i].turn_around_time, p[i].waiting_time, p[i].response_time);
+    }
+    calculate_averages(p,n);
+}
+
+int main()
+{
     int n;
     printf("Enter the number of processes: ");
     scanf("%d", &n);
-    
-    struct fcfs processes[n];
-    int choice;
 
-    do {
+    struct process_fcfs processes[n];
+
+    int choice;
+    do
+    {
         printf("\nMenu:\n");
-        printf("1. Input Process Details\n");1s 
+        printf("1. Input Process Details\n");
         printf("2. Display All Process Details\n");
         printf("3. Exit\n");
 
         printf("Enter your choice: ");
         scanf("%d", &choice);
 
-        switch (choice) {
+        switch (choice)
+        {
         case 1:
-            for (int i = 0; i < n; i++) {
+            for (int i = 0; i < n; i++)
+            {
                 printf("\nEnter details for Process %d:\n", i + 1);
                 input_process_details(&processes[i]);
             }
-            calculate_time(processes, n);
             break;
+
         case 2:
+            calculate_times(processes, n);
             display_process_details(processes, n);
             break;
+
         case 3:
             printf("Exiting...\n");
             break;
+
         default:
             printf("Invalid choice, please try again.\n");
         }
