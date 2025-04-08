@@ -1,69 +1,175 @@
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
 
 #define MAX 10
 
-typedef struct {
-    char name[4];         // Process name (max 3 chars + null terminator)
-    int burst_time;       // Execution time
-    int deadline;         // Max completion time (deadline)
-    int start_time;       // When it starts
-    int end_time;         // When it ends
-    int status;           // 1 = Success, 0 = Failed
-} Process;
+typedef struct
+{
+    int id;
+    int burst;
+    int period;
+    int deadline;
+    int remaining;
+    int weight;
+    int next_arrival;  
+    int next_deadline;
+} Task;
+int gcd(int a, int b)
+{
+    return b == 0 ? a : gcd(b, a % b);
+}
+int lcm(int a, int b) 
+{
+    return (a * b) / gcd(a, b);
+}
 
-void sortByDeadline(Process p[], int n) {
-    Process temp;
-    for (int i = 0; i < n-1; i++) {
-        for (int j = 0; j < n-i-1; j++) {
-            if (p[j].deadline > p[j+1].deadline) {
-                temp = p[j];
-                p[j] = p[j+1];
-                p[j+1] = temp;
+int calculate_lcm_of_deadlines(Task tasks[], int n)
+{
+    int result = tasks[0].deadline;
+    for (int i = 1; i < n; i++)
+    {
+        result = lcm(result, tasks[i].deadline);
+    }
+    return result;
+}
+
+void rate_monotonic(Task tasks[], int n, int hyper_period)
+{
+    printf("\nRate-Monotonic Scheduling:\n");
+    for (int t = 0; t < hyper_period; t++)
+    {
+        int current = -1;
+        for (int i = 0; i < n; i++)
+        {
+            if (t == tasks[i].next_arrival)
+            {
+                tasks[i].remaining = tasks[i].burst;
+                tasks[i].next_arrival += tasks[i].period;
+                tasks[i].next_deadline = t + tasks[i].period;
+            }
+            if (tasks[i].remaining > 0 &&
+                (current == -1 || tasks[i].period < tasks[current].period))
+            {
+                current = i;
+            }
+        }
+        if (current != -1)
+        {
+            printf("Time %d: P%d\n", t, tasks[current].id);
+            tasks[current].remaining--;
+        }
+        else
+        {
+            printf("Time %d: Idle\n", t);
+        }
+    }
+}
+
+void earliest_deadline_first(Task tasks[], int n, int hyper_period)
+{
+    printf("\nEarliest-Deadline First Scheduling:\n");
+    for (int t = 0; t < hyper_period; t++)
+    {
+        int current = -1;
+        for (int i = 0; i < n; i++)
+        {
+            if (t == tasks[i].next_arrival)
+            {
+                tasks[i].remaining = tasks[i].burst;
+                tasks[i].next_arrival += tasks[i].period;
+                tasks[i].next_deadline = t + tasks[i].deadline;
+            }
+            if (tasks[i].remaining > 0 &&
+                (current == -1 || tasks[i].next_deadline < tasks[current].next_deadline))
+            {
+                current = i;
+            }
+        }
+        if (current != -1)
+        {
+            printf("Time %d: P%d\n", t, tasks[current].id);
+            tasks[current].remaining--;
+        }
+        else
+        {
+            printf("Time %d: Idle\n", t);
+        }
+    }
+}
+
+void proportional_scheduling(Task tasks[], int n, int total_time)
+{
+    printf("\nProportional Scheduling (Weighted Round Robin Approx.):\n");
+    int time = 0;
+    while (time < total_time)
+    {
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < tasks[i].weight && time < total_time; j++)
+            {
+                printf("Time %d: P%d\n", time, tasks[i].id);
+                time++;
             }
         }
     }
 }
 
-int main() {
-    Process p[MAX];
-    int n, current_time = 0;
+int main()
+{
+    int n;
+    Task tasks[MAX];
 
-    printf("Enter number of processes: ");
+    printf("Enter number of tasks (max %d): ", MAX);
     scanf("%d", &n);
+    if (n > MAX)
+        n = MAX;
 
-    for (int i = 0; i < n; i++) {
-        printf("\nProcess %d:\n", i + 1);
-        printf("Enter process name (max 3 characters): ");
-        scanf("%s", p[i].name);
-        printf("Enter burst time (ms): ");
-        scanf("%d", &p[i].burst_time);
-        printf("Enter deadline (max completion time in ms): ");
-        scanf("%d", &p[i].deadline);
+    printf("Enter Burst times (space-separated): ");
+    for (int i = 0; i < n; i++)
+    {
+        scanf("%d", &tasks[i].burst);
     }
 
-    // Sort processes based on deadline (Earliest Deadline First)
-    sortByDeadline(p, n);
-
-    printf("\nScheduling Order and Status:\n");
-    printf("--------------------------------------------------\n");
-    printf("| Name | Start | End  | Deadline | Status        |\n");
-    printf("--------------------------------------------------\n");
-
-    for (int i = 0; i < n; i++) {
-        p[i].start_time = current_time;
-        p[i].end_time = current_time + p[i].burst_time;
-        p[i].status = (p[i].end_time <= p[i].deadline) ? 1 : 0;
-        current_time = p[i].end_time;
-
-        printf("| %-4s | %-5d | %-4d | %-8d | %-13s |\n",
-               p[i].name,
-               p[i].start_time,
-               p[i].end_time,
-               p[i].deadline,
-               p[i].status ? "Success" : "Failed");
+    printf("Enter Periods (space-separated): ");
+    for (int i = 0; i < n; i++)
+    {
+        scanf("%d", &tasks[i].period);
     }
 
-    printf("--------------------------------------------------\n");
+    printf("Enter Deadlines (space-separated): ");
+    for (int i = 0; i < n; i++)
+    {
+        scanf("%d", &tasks[i].deadline);
+    }
+
+    printf("Enter Weights (space-separated): ");
+    for (int i = 0; i < n; i++)
+    {
+        scanf("%d", &tasks[i].weight);
+    }
+
+    for (int i = 0; i < n; i++)
+    {
+        tasks[i].id = i + 1;
+        tasks[i].remaining = 0;
+        tasks[i].next_arrival = 0;
+        tasks[i].next_deadline = 0;
+    }
+
+    int hyper_period = calculate_lcm_of_deadlines(tasks, n);
+    printf("\nCalculated total simulation time (LCM of deadlines): %d\n", hyper_period);
+
+    rate_monotonic(tasks, n, hyper_period);
+
+    for (int i = 0; i < n; i++)
+    {
+        tasks[i].remaining = 0;
+        tasks[i].next_arrival = 0;
+        tasks[i].next_deadline = 0;
+    }
+    earliest_deadline_first(tasks, n, hyper_period);
+
+    proportional_scheduling(tasks, n, hyper_period);
+
     return 0;
 }
