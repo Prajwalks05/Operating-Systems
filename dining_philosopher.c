@@ -2,28 +2,31 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#define NUM_PHILOSOPHERS 5
+#define max 5
 
-pthread_mutex_t forks[NUM_PHILOSOPHERS];
+pthread_mutex_t forks[max];
 
-void* philosopher(void* num) {
-    int id = *(int*)num;
+void *philosopher(void *num)
+{
+    int id = *(int *)num;
     int left = id;
-    int right = (id + 1) % NUM_PHILOSOPHERS;
+    int right = (id + 1) % max;
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++)
+    {
         printf("Philosopher %d is thinking...\n", id);
         sleep(1);
-
         // Pick up forks (to prevent deadlock, pick lower-numbered fork first)
-        if (id % 2 == 0) {
+        if (id % 2 == 0)
+        {
             pthread_mutex_lock(&forks[left]);
             pthread_mutex_lock(&forks[right]);
-        } else {
+        }
+        else
+        {
             pthread_mutex_lock(&forks[right]);
             pthread_mutex_lock(&forks[left]);
         }
-
         printf("Philosopher %d is eating...\n", id);
         sleep(2);
 
@@ -33,34 +36,33 @@ void* philosopher(void* num) {
 
         printf("Philosopher %d finished eating.\n", id);
     }
-
     return NULL;
 }
 
-int main() {
-    pthread_t philosophers[NUM_PHILOSOPHERS];
-    int ids[NUM_PHILOSOPHERS];
-
+int main()
+{
+    pthread_t philosophers[max];
+    int ids[max];
     // Initialize mutexes
-    for (int i = 0; i < NUM_PHILOSOPHERS; i++) {
+    for (int i = 0; i < max; i++)
+    {
         pthread_mutex_init(&forks[i], NULL);
     }
-
     // Create philosopher threads
-    for (int i = 0; i < NUM_PHILOSOPHERS; i++) {
+    for (int i = 0; i < max; i++)
+    {
         ids[i] = i;
         pthread_create(&philosophers[i], NULL, philosopher, &ids[i]);
     }
-
     // Wait for all philosophers to finish
-    for (int i = 0; i < NUM_PHILOSOPHERS; i++) {
+    for (int i = 0; i < max; i++)
+    {
         pthread_join(philosophers[i], NULL);
     }
-
     // Destroy mutexes
-    for (int i = 0; i < NUM_PHILOSOPHERS; i++) {
+    for (int i = 0; i < max; i++)
+    {
         pthread_mutex_destroy(&forks[i]);
     }
-
     return 0;
 }
